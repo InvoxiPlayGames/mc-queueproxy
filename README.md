@@ -61,7 +61,7 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 ## TODO:
 
 - Check for issues with accuracy, performance and reliability.
-- Disallowing multiple connections from the same user and/or IP.
+- Disallowing multiple connections from the same IP.
 - User whitelisting.
 - Admin features (chat commands to whitelist/unwhitelist, view queue stats, kick players from queue etc).
 - Connection throttling and IP white/blacklisting.

@@ -76,6 +76,15 @@ server.on('login', function(client) {
     if (!client.socket.remoteAddress) return; // failure check if a player disconnects during login
     client.logPrefix = `[${client.socket.remoteAddress} | ${client.id} | ${client.username} | ${client.uuid}]`;
     client.connectedToServer = false;
+
+    // check if this user has connected before, and kick any remaining sessions
+    // client ids are sequential, so check all ids before ours
+    for (var i = 0; i < client.id; i++) {
+        if (!server.clients[i] || server.clients[i].state !== mc.states.PLAY) continue; // don't check, if client doesn't exist or isn't in play state
+        // kick existing clients if they have the same username or UUID as our client (only check UUID if in online mode)
+        if (server.clients[i].username == client.username) server.clients[i].end(config.anotherLocationMessage);
+        if (config.onlineMode && server.clients[i].uuid == client.uuid) server.clients[i].end(config.anotherLocationMessage);
+    }
     
     // todo: whitelist
     

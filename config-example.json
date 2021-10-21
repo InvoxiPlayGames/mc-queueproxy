@@ -29,6 +29,7 @@
     "joiningGameMessage": "Connecting to server...",
     "disconnectedMessage": "Disconnected from server.",
     "serverFullMessage": "Server is full.",
+    "anotherLocationMessage": "You logged in from another location.",
     "notWhitelistedMessage": "You are not whitelisted on this server.",
     "unsupportedVersionMessage": "Minecraft version unsupported.",
     "positionInQueueColor": "light_purple",
