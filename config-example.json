@@ -5,6 +5,7 @@
     "onlineMode": true,
     "targetHost": "192.0.2.43",
     "targetPort": 26666,
+    "targetOnline": true,
     "webServicePort": 24464,
     "maxPlayers": 1,
     

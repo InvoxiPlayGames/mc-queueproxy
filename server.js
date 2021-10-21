@@ -204,10 +204,10 @@ function connectToMainServer(client, isFirstJoin) {
         username: client.username,
         profilesFolder: false,
         // if we're in online mode and on 1.16 or higher, log into our fake session server.
-        password: (config.onlineMode && server.mcversion.version >= 735) ? accessTokenSecretKey : null,
-        auth: (config.onlineMode && server.mcversion.version >= 735) ? "mojang" : null,
-        authServer: (config.onlineMode && server.mcversion.version >= 735) ? "http://localhost:"+config.webServicePort : null,
-        sessionServer: (config.onlineMode && server.mcversion.version >= 735) ? "http://localhost:"+config.webServicePort : null
+        password: (config.targetOnline) ? accessTokenSecretKey : null,
+        auth: (config.targetOnline) ? "mojang" : null,
+        authServer: (config.targetOnline) ? "http://localhost:"+config.webServicePort : null,
+        sessionServer: (config.targetOnline) ? "http://localhost:"+config.webServicePort : null
     });
     client.mainClient.on("login", (login) => {
         console.log(client.logPrefix, "Connected to main server!");
@@ -217,7 +217,7 @@ function connectToMainServer(client, isFirstJoin) {
             client.write("respawn", login);
         }
         client.mainClient.on("packet", (data, meta) => {
-            if (meta.name == "player_info" && config.onlineMode && server.mcversion.version < 735) {
+            if (meta.name == "player_info" && config.onlineMode && !config.targetOnline) {
                 // hack to enable skins using offline mode origin servers
                 for (var i = 0; i < data.data.length; i++) {
                     if (data.action == 0) {

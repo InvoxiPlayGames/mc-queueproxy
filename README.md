@@ -21,7 +21,7 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
     - Rename "config-example.json" to "config.json" and fill in [all values](#config-json-values).
 4. Configure your Minecraft server.
     - For servers running 1.16 and later, add the following launch arguments to your server start command: `-Dminecraft.api.account.host="https://api.mojang.com" -Dminecraft.api.session.host="http://yourProxyIP:webServicePort" -Dminecraft.api.auth.host="http://yourProxyIP:webServicePort" -Dminecraft.api.services.host="https://api.minecraftservices.com"`, where "yourProxyIP" is the IP of your proxy server accessible via your main game server, and "webServicePort" is the value defined in config.json.
-	- For servers running 1.15.2 or earlier, disable `online-mode` in server.properties. This is a poor solution, a better plugin-based solution will be worked on in the future.
+	- For servers running 1.15.2 or earlier, disable `online-mode` in server.properties and set `targetOnline` in config.json to false. This is a poor solution, a better plugin-based solution will be worked on in the future.
 	- If running the proxy server on the same machine as your game server, change `server-port` in server.properties to be something *other* than 25565. (reflect this change in config.json)
 5. Configure your firewall / port forwarding.
     - If your game server is running with online-mode disabled, it is **crucial** that you make your game server inaccessible to all IPs besides your proxy server. This is optional, but recommended, if using 1.16 or later and online-mode is enabled.
@@ -38,6 +38,7 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 - **onlineMode** - Whether the server checks the user's session against Mojang to prove their username is legitimate. e.g. `true`
 - **targetHost** - The IP address of the game server. e.g. `192.0.2.43`
 - **targetPort** - The port of the game server. e.g. `26666`
+- **targetOnline** - Whether the game server has online-mode enabled in server.properties. e.g. `true`
 - **webServicePort** - The port used for the web services of the proxy (fake session server for Minecraft 1.16+). e.g. `24464`
 - **maxPlayers** - The maximum players allowed in the game server at once. e.g. `20`
 - **queueEnabled** - Enables the queue system of the proxy server. Disabling this means players will get kicked if the maxPlayers count is reached. e.g. `true`
