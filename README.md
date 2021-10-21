@@ -33,6 +33,7 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 ## config.json values
 
 - **serverVersion** - A string declaring the Minecraft version for the server to run as. e.g. `"1.17.1"`
+- **enforceServerVersion** - Whether to kick players for using the wrong version. Recommended to keep this as `true` unless your game server has ProtocolSupport/ViaVersion.
 - **serverHost** - The IP address to run the proxy server under. Recommended to keep this as `"0.0.0.0"` unless you know what you're doing.
 - **serverPort** - The port to run the proxy server under. e.g. `25565`
 - **onlineMode** - Whether the server checks the user's session against Mojang to prove their username is legitimate. e.g. `true`
@@ -65,8 +66,6 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 - User whitelisting.
 - Admin features (chat commands to whitelist/unwhitelist, view queue stats, kick players from queue etc).
 - Connection throttling and IP white/blacklisting.
-- Support for multiple client versions (for game servers using ProtocolSupport/ViaVersion)
-    - This is partially complete.
 - Plugin support on the proxy server itself, to allow for external customisations.
 - Toggleable player list in Message of the Day.
 - Support for detecting mods on host/client servers to kick incompatible players.

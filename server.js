@@ -63,7 +63,7 @@ server.on('connection', function(client) {
     // todo: add connection throttling and IP whitelisting
     client.on("set_protocol", (packet) => {
         // if trying to enter the play state, hack to kick players for different versions
-        if (packet.nextState == 2 && server.mcversion.version !== packet.protocolVersion) {
+        if (packet.nextState == 2 && config.enforceServerVersion && server.mcversion.version !== client.protocolVersion) {
             client.end(config.unsupportedVersionMessage);
             return;
         }
@@ -105,9 +105,8 @@ server.on('login', function(client) {
         }
     });
     
-    // disconnect client if version mismatched
-    // todo: version whitelist for servers with plugins such as ProtocolSupport/ViaVersion
-    if (server.mcversion.version !== client.protocolVersion) {
+    // disconnect client if version mismatched, if enabled in config
+    if (config.enforceServerVersion && server.mcversion.version !== client.protocolVersion) {
         console.log(client.logPrefix, "Tried to log in with an old Minecraft version.");
         client.end(config.unsupportedVersionMessage);
         return;
@@ -207,7 +206,7 @@ function connectToMainServer(client, isFirstJoin) {
     client.connectedToServer = true;
     playersInMainServer++;
     client.mainClient = mc.createClient({
-        version: config.serverVersion,
+        version: client.protocolVersion,
         host: config.targetHost,
         port: config.targetPort,
         username: client.username,
