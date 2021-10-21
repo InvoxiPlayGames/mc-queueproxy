@@ -217,10 +217,23 @@ function connectToMainServer(client, isFirstJoin) {
             client.write("respawn", login);
         }
         client.mainClient.on("packet", (data, meta) => {
+            if (meta.name == "player_info" && config.onlineMode && server.mcversion.version < 735) {
+                // hack to enable skins using offline mode origin servers
+                for (var i = 0; i < data.data.length; i++) {
+                    if (data.action == 0) {
+                        // keep track of this client's fake UUID to replace in later packets
+                        if (data.data[i].name == client.username) client.fakeUUID = data.data[i].UUID;
+                        // add skin property data to all players
+                        data.data[i].properties = knownPlayers[data.data[i].name].properties.map(property => ({ name: property.name, value: property.value, isSigned: true, signature: property.signature }));
+                    }
+                    // replace the current player's UUID
+                    if (data.data[i].UUID == client.fakeUUID) data.data[i].UUID = client.uuid;
+                }
+            }
             client.write(meta.name, data);
         });
         client.on("packet", (data, meta) => {
-            if (meta.name == "keep_alive") return; // silence the client's keepalive, the fake client handles this for us
+            if (meta.name == "keep_alive") return; // silence the client's keepalive, the fake client handles this for us - todo: make the real client handle keepalives
             client.mainClient.write(meta.name, data);
         });
     });
