@@ -1,0 +1,12 @@
+# vscode files
+.vscode
+
+# node files
+.npm
+.env
+package.json
+
+# config files
+config.json
+whitelist.json
+ops.json

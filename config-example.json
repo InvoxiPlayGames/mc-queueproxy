@@ -1,0 +1,36 @@
+{
+    "serverVersion": "1.17.1",
+    "serverHost": "0.0.0.0",
+    "serverPort": 25565,
+    "onlineMode": true,
+    "targetHost": "192.0.2.43",
+    "targetPort": 26666,
+    "webServicePort": 24464,
+    "maxPlayers": 1,
+    
+    "queueEnabled": true,
+    "queueWorldTime": 13000,
+    
+    "motds": [
+        [ {"text": "A Minecraft Proxy Server!", "color": "red", "bold": true},
+          {"text": "\nPowered by mc-queueproxy.", "color": "gold", "bold": false, "italic": true} ],
+          
+        [ {"text": "A Minecraft Proxy Server?", "color": "green"},
+          {"text": "\nPowered by mc-queueproxy.", "color": "yellow", "bold": true} ]
+    ],
+    "knownMotds": [],
+    "showPlayerCount": false,
+    "knownShowPlayerCount": true,
+    "queueInPlayerCount": true,
+    "legacyMotdMessage": "A Minecraft Proxy Server",
+    
+    "positionInQueueMessage": "Position in queue: ",
+    "joiningGameMessage": "Connecting to server...",
+    "disconnectedMessage": "Disconnected from server.",
+    "serverFullMessage": "Server is full.",
+    "notWhitelistedMessage": "You are not whitelisted on this server.",
+    "unsupportedVersionMessage": "Minecraft version unsupported.",
+    "positionInQueueColor": "light_purple",
+    "joiningGameColor": "gold",
+    "disconnectedColor": "red"
+}
