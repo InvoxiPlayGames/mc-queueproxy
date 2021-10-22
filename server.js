@@ -92,6 +92,16 @@ server.on('connection', function(client) {
     });
 });
 
+// announce when we're listening, load extra config files
+server.on('listening', function() {
+    console.log(`- Server listening! ${config.serverHost}:${config.serverPort}`);
+    console.log(`- Online mode: ${config.onlineMode} (game server: ${config.targetOnline})`);
+    console.log(`- Game server: ${config.targetHost}:${config.targetPort}`);
+    console.log(`- Minecraft version: ${config.serverVersion} (enforced: ${config.enforceServerVersion})`);
+
+    // load whitelist file
+    if (config.whitelistEnabled) loadWhitelistFromFile();
+});
 
 // handle client logins
 server.on('login', function(client) {
@@ -117,7 +127,31 @@ server.on('login', function(client) {
         if (ipConnected > config.connectionsPerIP) server.clients[i].end(config.tooManyConnectionsMessage);
     }
     
-    // todo: whitelist
+    // if whitelist is enabled, check the whitelist to see if the player is allowed
+    if (config.whitelistEnabled) {
+        if (config.onlineMode) {
+            // if server is in online mode, search for the player's UUID
+            if (!whitelist.find(u => u.uuid == client.uuid)) {
+                console.log(client.logPrefix, "Tried to log in without being whitelisted.");
+                client.end(config.notWhitelistedMessage);
+                return;
+            }
+        } else {
+            // if server is in offline mode, search for the player's username
+            if (!whitelist.find(u => u.name == client.username)) {
+                console.log(client.logPrefix, "Tried to log in without being whitelisted.");
+                client.end(config.notWhitelistedMessage);
+                return;
+            }
+        }
+    }
+    
+    // disconnect client if version mismatched, if enabled in config
+    if (config.enforceServerVersion && server.mcversion.version !== client.protocolVersion) {
+        console.log(client.logPrefix, "Tried to log in with an old Minecraft version.");
+        client.end(config.unsupportedVersionMessage);
+        return;
+    }
     
     knownPlayers[client.username] = client.profile; // add user to known users cache
     knownIPs[client.socket.remoteAddress] = client.username; // add user to known IPs cache
@@ -135,13 +169,6 @@ server.on('login', function(client) {
             client.mainClient.end();
         }
     });
-    
-    // disconnect client if version mismatched, if enabled in config
-    if (config.enforceServerVersion && server.mcversion.version !== client.protocolVersion) {
-        console.log(client.logPrefix, "Tried to log in with an old Minecraft version.");
-        client.end(config.unsupportedVersionMessage);
-        return;
-    }
     
     // if server isn't "full", allow player to join instantly
     // todo: check if server is an "admin" to allow joining regardless
@@ -286,6 +313,11 @@ function connectToMainServer(client, isFirstJoin) {
     });
 }
 
+function loadWhitelistFromFile() {
+    whitelist = JSON.parse(fs.readFileSync("whitelist.json"));
+}
+
+// queue update interval
 setInterval(() => {
     // check for queue updates
     if (playersInMainServer < config.maxPlayers && queue.length >= 1) {
@@ -297,6 +329,9 @@ setInterval(() => {
         setTimeout(()=>{ connectToMainServer(clientToJoin, false); }, 1000);
     }
 }, 2000);
+
+// whitelist update interval
+setInterval(loadWhitelistFromFile, 5000);
 
 // HTTP server for fake session/auth server.
 // code is messy and rushed.

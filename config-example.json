@@ -12,6 +12,7 @@
 
     "connectionThrottleMs": 4000,
     "connectionsPerIP": 2,
+    "whitelistEnabled": false,
     
     "queueEnabled": true,
     "queueWorldTime": 13000,

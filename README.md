@@ -19,6 +19,7 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 	- Run `npm install minecraft-protocol` in the "mc-queueproxy" folder.
 3. Configure mc-queueproxy.
     - Rename "config-example.json" to "config.json" and fill in [all values](#config-json-values).
+    - If using whitelist mode, copy whitelist.json from your Minecraft server to the directory of mc-queueproxy.
 4. Configure your Minecraft server.
     - For servers running 1.16 and later, add the following launch arguments to your server start command: `-Dminecraft.api.account.host="https://api.mojang.com" -Dminecraft.api.session.host="http://yourProxyIP:webServicePort" -Dminecraft.api.auth.host="http://yourProxyIP:webServicePort" -Dminecraft.api.services.host="https://api.minecraftservices.com"`, where "yourProxyIP" is the IP of your proxy server accessible via your main game server, and "webServicePort" is the value defined in config.json.
 	- For servers running 1.15.2 or earlier, disable `online-mode` in server.properties and set `targetOnline` in config.json to false. This is a poor solution, a better plugin-based solution will be worked on in the future.
@@ -44,6 +45,7 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 - **maxPlayers** - The maximum players allowed in the game server at once. e.g. `20`
 - **connectionThrottleMs** - The number of milliseconds to enforce between connection attempts per IP address. e.g. `4000`
 - **connectionsPerIP** - The number of simultaneous connections to allow per IP address. e.g. `2`
+- **whitelistEnabled** - Whether to enable the user whitelist at whitelist.json. e.g. `false`
 - **queueEnabled** - Enables the queue system of the proxy server. Disabling this means players will get kicked if the maxPlayers count is reached. e.g. `true`
 - **queueWorldTime** - The time of day to set the queue world to, to slightly adjust the colour the user sees. e.g. `13000`
 - **motds** - An array of text objects / arrays of text objects to use for the message of the day. See config-example.json for examples.
@@ -68,7 +70,7 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 ## TODO:
 
 - Check for issues with accuracy, performance and reliability.
-- User/IP whitelisting/banning.
+- User/IP whitelisting/banning. (user whitelisting is done)
 - Admin features (chat commands to whitelist/unwhitelist, view queue stats, kick players from queue etc).
 - Plugin support on the proxy server itself, to allow for external customisations.
 - Support for detecting mods on host/client servers to kick incompatible players.
