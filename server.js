@@ -26,6 +26,7 @@ var server = mc.createServer({
 var loginPacket = mcData.loginPacket; // data for login packet
 var knownPlayers = {}; // dictionary of username:profile
 var knownIPs = {}; // dictionary of ip:username
+var IPtimes = {}; // dictionary of ip:timestamp
 var whitelist = []; // array of whitelisted players
 var admins = []; // array of admin players
 var queue = []; // player queue
@@ -60,8 +61,18 @@ function serverList(motd, client) {
 
 // handle connection event
 server.on('connection', function(client) {
-    // todo: add connection throttling and IP whitelisting
+    // todo: add IP whitelisting
     client.on("set_protocol", (packet) => {
+        if (!client.socket.remoteAddress) return; // failure check if a player disconnects right after connection
+        // if the IP last connected before connectionThrottleMs elapsed, disconnect the player
+        if (packet.nextState == 2 && IPtimes[client.socket.remoteAddress] && Date.now() - IPtimes[client.socket.remoteAddress] < config.connectionThrottleMs) {
+            console.log(client.socket.remoteAddress, "tried to connect too fast");
+            client.end(config.connectionThrottledMessage);
+            return;
+        }
+        // keep track of when the IP last connected
+        IPtimes[client.socket.remoteAddress] = Date.now();
+
         // if trying to enter the play state, hack to kick players for different versions
         if (packet.nextState == 2 && config.enforceServerVersion && server.mcversion.version !== client.protocolVersion) {
             client.end(config.unsupportedVersionMessage);
@@ -77,13 +88,22 @@ server.on('login', function(client) {
     client.logPrefix = `[${client.socket.remoteAddress} | ${client.id} | ${client.username} | ${client.uuid}]`;
     client.connectedToServer = false;
 
-    // check if this user has connected before, and kick any remaining sessions
+    // check if this user or IP has connected before, and kick any remaining sessions
     // client ids are sequential, so check all ids before ours
-    for (var i = 0; i < client.id; i++) {
-        if (!server.clients[i] || server.clients[i].state !== mc.states.PLAY) continue; // don't check, if client doesn't exist or isn't in play state
+    // do in reverse order to kick the oldest connected IP
+    var ipConnected = 1;
+    for (var i = client.id - 1; i >= 0; i--) {
+        // don't check, if client doesn't exist or isn't in play state
+        if (!server.clients[i] || server.clients[i].state !== mc.states.PLAY) continue;
         // kick existing clients if they have the same username or UUID as our client (only check UUID if in online mode)
-        if (server.clients[i].username == client.username) server.clients[i].end(config.anotherLocationMessage);
-        if (config.onlineMode && server.clients[i].uuid == client.uuid) server.clients[i].end(config.anotherLocationMessage);
+        if (server.clients[i].username == client.username || (config.onlineMode && server.clients[i].uuid == client.uuid)) {
+            server.clients[i].end(config.anotherLocationMessage);
+        // count how many times this IP is connected
+        } else if (server.clients[i].socket.remoteAddress && server.clients[i].socket.remoteAddress == client.socket.remoteAddress) {
+            ipConnected++;
+        }
+        // if the IP is connected more than the config file allows, kick remaining connections
+        if (ipConnected > config.connectionsPerIP) server.clients[i].end(config.tooManyConnectionsMessage);
     }
     
     // todo: whitelist
