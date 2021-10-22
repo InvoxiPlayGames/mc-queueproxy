@@ -42,7 +42,7 @@ var chunk = new Chunk();
 function serverList(motd, client) {
     var clientKnown = knownIPs[client.socket.remoteAddress];
     motd.version.name = "QueueServer " + server.mcversion.minecraftVersion;
-    motd.version.protocol = server.mcversion.version;
+    motd.version.protocol = (config.enforceServerVersion || client.protocolVersion == -1) ? server.mcversion.version : client.protocolVersion;
     
     // choose random motd
     motd.description = config.motds[ Math.floor(Math.random() * config.motds.length) ];
@@ -69,9 +69,10 @@ server.on('connection', function(client) {
             console.log(client.socket.remoteAddress, "tried to connect too fast");
             client.end(config.connectionThrottledMessage);
             return;
+        } else if (packet.nextState == 2) {
+            // keep track of when the IP last connected
+            IPtimes[client.socket.remoteAddress] = Date.now();
         }
-        // keep track of when the IP last connected
-        IPtimes[client.socket.remoteAddress] = Date.now();
 
         // if trying to enter the play state, hack to kick players for different versions
         if (packet.nextState == 2 && config.enforceServerVersion && server.mcversion.version !== client.protocolVersion) {

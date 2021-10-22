@@ -42,6 +42,8 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 - **targetOnline** - Whether the game server has online-mode enabled in server.properties. e.g. `true`
 - **webServicePort** - The port used for the web services of the proxy (fake session server for Minecraft 1.16+). e.g. `24464`
 - **maxPlayers** - The maximum players allowed in the game server at once. e.g. `20`
+- **connectionThrottleMs** - The number of milliseconds to enforce between connection attempts per IP address. e.g. `4000`
+- **connectionsPerIP** - The number of simultaneous connections to allow per IP address. e.g. `2`
 - **queueEnabled** - Enables the queue system of the proxy server. Disabling this means players will get kicked if the maxPlayers count is reached. e.g. `true`
 - **queueWorldTime** - The time of day to set the queue world to, to slightly adjust the colour the user sees. e.g. `13000`
 - **motds** - An array of text objects / arrays of text objects to use for the message of the day. See config-example.json for examples.
@@ -54,6 +56,8 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 - **joiningGameMessage** - A string for a message to display to the user before they get connected to the game server. e.g. `"Connecting to server..."`
 - **disconnectedMessage** - A string for a message to display to the user if they get disconnected from the server. e.g. `"Disconnected from server."`
 - **serverFullMessage** - A string for a message to display to the user if the queue is disabled and the server is full. e.g. `"Server is full."`
+- **tooManyConnectionsMessage** - A string for a message to display to the user if they have more connections than allowed in connectionsPerIP. e.g. `You have too many open connections!`
+- **connectionThrottledMessage** - A string for a message to display to the user if they try to connect in quick succession. e.g. `Connection throttled! Please wait a moment and try again.` 
 - **notWhitelistedMessage** - A string for a message to display to the user if they aren't whitelisted on the server. e.g. `"You are not whitelisted on this server."`
 - **positionInQueueColor** - A string for a Minecraft colour type used for the positionInQueueMessage. e.g. `light_purple`
 - **joiningGameColor** - A string for a Minecraft colour type used for the joiningGameMessage. e.g. `gold`
