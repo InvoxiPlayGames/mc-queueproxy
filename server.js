@@ -1,9 +1,6 @@
 // imports
 var config = require("./config.json");
 var mc = require('minecraft-protocol');
-var Chunk = require('prismarine-chunk')(config.serverVersion);
-var mcData = require('minecraft-data')(config.serverVersion);
-var Vec3 = require('vec3');
 var http = require('http');
 var url = require('url');
 var fs = require('fs');
@@ -23,7 +20,6 @@ var server = mc.createServer({
     beforePing: serverList
 });
 // global variables
-var loginPacket = mcData.loginPacket; // data for login packet
 var knownPlayers = {}; // dictionary of username:profile
 var knownIPs = {}; // dictionary of ip:username
 var IPtimes = {}; // dictionary of ip:timestamp
@@ -35,8 +31,7 @@ var accessTokenSecretKey = crypto.randomFillSync(Buffer.alloc(20)).toString("hex
 var clientTokenSecretKey = crypto.randomFillSync(Buffer.alloc(20)).toString("hex"); // random client token
 
 // set up data to send to clients in the queue
-var ypos = 240; // y-pos is set higher if graphics enabled, for glitched snow
-var chunk = new Chunk();
+var ypos = 240; // y-pos is set higher if graphics enabled, for glitched snow - todo: add that glitched snow animation
 
 // server list interception function
 function serverList(motd, client) {
@@ -188,6 +183,7 @@ server.on('login', function(client) {
     queue.push(client.id);
     console.log(client.logPrefix, "Connected to queue at position", queue.indexOf(client.id) + 1);
     
+    var loginPacket = require('minecraft-data')(client.protocolVersion).loginPacket;
     // write login packet
     client.write('login', {
         entityId: client.id,
@@ -212,6 +208,8 @@ server.on('login', function(client) {
     // set player coordinates
     client.write('position', { x: 0.5, y: ypos, z: 0.5, yaw: 0, pitch: 0, flags: 0x00 });
     // send our fake chunk data
+    
+    var chunk = new (require('prismarine-chunk')(client.protocolVersion))();
     client.write('map_chunk', {
         x: 0,
         z: 0,
