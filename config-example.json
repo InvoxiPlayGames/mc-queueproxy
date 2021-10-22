@@ -25,7 +25,9 @@
     ],
     "knownMotds": [],
     "showPlayerCount": false,
+    "showPlayers": false,
     "knownShowPlayerCount": true,
+    "knownShowPlayers": false,
     "queueInPlayerCount": true,
     "legacyMotdMessage": "A Minecraft Proxy Server",
     

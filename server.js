@@ -53,6 +53,16 @@ function serverList(motd, client) {
     if (config.showPlayerCount || (clientKnown && config.knownShowPlayerCount)) {
         motd.players.max = config.maxPlayers;
         motd.players.online = playersInMainServer + (config.queueInPlayerCount ? queue.length : 0);
+        // show list of players connected to the main server
+        if (config.showPlayers || (clientKnown && config.knownShowPlayers)) {
+            motd.players.sample = [];
+            // iterate through every single client on the server, if they're connected add them to the sample
+            // todo: should probably migrate this to a more efficient method
+            for (var i = 0; i < client.id; i++) {
+                if (!server.clients[i] || server.clients[i].state !== mc.states.PLAY || !server.clients[i].connectedToServer) continue;
+                motd.players.sample.push({ name: server.clients[i].username, id: server.clients[i].uuid });
+            }
+        }
     } else {
         delete motd.players; // these values are filled in by the library beforehand - remove them
     }

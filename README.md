@@ -50,7 +50,9 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 - **knownMotds** - An array of text objects / arrays of text objects to use for the message of the day for players the server has seen before. If empty (`[]`), the same motds will be used for all users.
 - **legacyMotdMessage** - A string for a message of the day to be shown to clients running versions below 1.7. e.g. `"A Minecraft Proxy Server"`
 - **showPlayerCount** - Enables showing the player count of the server in the message of the day request. e.g. `false`
+- **showPlayers** - Enables showing the players currently connected to the server in the server list MOTD. This is a potential privacy risk. e.g. `false`
 - **knownShowPlayerCount** - Enables showing the player count of the server in the message of the day request for players the server has seen before. e.g. `true`
+- **knownShowPlayers** - Enables showing the players currently connected to the server in the server list MOTD for players the server has seen before. This is a potential privacy risk. e.g. `false`
 - **queueInPlayerCount** - Enables showing members in queue in the player count in the server list ping. e.g. `true`
 - **positionInQueueMessage** - A string for a message to display before the player's queue position. e.g. `"Position in queue: "`
 - **joiningGameMessage** - A string for a message to display to the user before they get connected to the game server. e.g. `"Connecting to server..."`
@@ -69,7 +71,6 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 - User/IP whitelisting/banning.
 - Admin features (chat commands to whitelist/unwhitelist, view queue stats, kick players from queue etc).
 - Plugin support on the proxy server itself, to allow for external customisations.
-- Toggleable player list in Message of the Day.
 - Support for detecting mods on host/client servers to kick incompatible players.
 - Paper plugin (for game server) to sync configuration (user whitelist/admins) between proxy and base server.
 - Paper plugin (for game server) to enable changing auth hosts (for online-mode workaround).
