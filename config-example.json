@@ -10,6 +10,10 @@
     "webServicePort": 24464,
     "maxPlayers": 12,
 
+    "domainWhitelistEnabled": false,
+    "domainWhitelist": ["minecraft.mydomain.url"],
+    "domainWhitelistShowMotd": true,
+
     "connectionThrottleMs": 4000,
     "connectionsPerIP": 2,
     "whitelistEnabled": false,
@@ -40,6 +44,7 @@
     "tooManyConnectionsMessage": "You have too many open connections!",
     "connectionThrottledMessage": "Connection throttled! Please wait a moment and try again.",
     "notWhitelistedMessage": "You are not whitelisted on this server.",
+    "invalidDomainMessage": "Invalid domain.",
     "unsupportedVersionMessage": "Minecraft version unsupported.",
     "positionInQueueColor": "light_purple",
     "joiningGameColor": "gold",

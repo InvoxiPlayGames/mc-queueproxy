@@ -35,6 +35,11 @@ var ypos = 240; // y-pos is set higher if graphics enabled, for glitched snow - 
 
 // server list interception function
 function serverList(motd, client) {
+    // if domain whitelist is enabled and showing MOTD is disabled, don't send any motd data - the client will fallback to legacyMotdMessage
+    if (config.domainWhitelistEnabled && !config.domainWhitelistShowMotd && !config.domainWhitelist.includes(client.serverHost)) {
+        return null;
+    }
+    
     var clientKnown = knownIPs[client.socket.remoteAddress];
     motd.version.name = "QueueServer " + server.mcversion.minecraftVersion;
     motd.version.protocol = (config.enforceServerVersion || client.protocolVersion == -1) ? server.mcversion.version : client.protocolVersion;
@@ -73,16 +78,11 @@ server.on('connection', function(client) {
         if (packet.nextState == 2 && IPtimes[client.socket.remoteAddress] && Date.now() - IPtimes[client.socket.remoteAddress] < config.connectionThrottleMs) {
             console.log(client.socket.remoteAddress, "tried to connect too fast");
             client.end(config.connectionThrottledMessage);
+            client.shouldBeKicked = true;
             return;
         } else if (packet.nextState == 2) {
             // keep track of when the IP last connected
             IPtimes[client.socket.remoteAddress] = Date.now();
-        }
-
-        // if trying to enter the play state, hack to kick players for different versions
-        if (packet.nextState == 2 && config.enforceServerVersion && server.mcversion.version !== client.protocolVersion) {
-            client.end(config.unsupportedVersionMessage);
-            return;
         }
     });
 });
@@ -103,6 +103,12 @@ server.on('login', function(client) {
     if (!client.socket.remoteAddress) return; // failure check if a player disconnects during login
     client.logPrefix = `[${client.socket.remoteAddress} | ${client.id} | ${client.username} | ${client.uuid}]`;
     client.connectedToServer = false;
+    
+    // handle weird connection edge-cases
+    if (client.shouldBeKicked) {
+        client.end();
+        return;
+    }
 
     // check if this user or IP has connected before, and kick any remaining sessions
     // client ids are sequential, so check all ids before ours
@@ -120,6 +126,13 @@ server.on('login', function(client) {
         }
         // if the IP is connected more than the config file allows, kick remaining connections
         if (ipConnected > config.connectionsPerIP) server.clients[i].end(config.tooManyConnectionsMessage);
+    }
+
+    // if domain whitelist is enabled, check if the domain the user is connecting from is valid
+    if (config.domainWhitelistEnabled && !config.domainWhitelist.includes(client.serverHost)) {
+        console.log(client.logPrefix, "Tried to log in from unknown domain", client.serverHost);
+        client.end(config.invalidDomainMessage);
+        return;
     }
     
     // if whitelist is enabled, check the whitelist to see if the player is allowed
@@ -329,7 +342,10 @@ setInterval(() => {
 }, 2000);
 
 // whitelist update interval
-setInterval(loadWhitelistFromFile, 5000);
+// todo: only update whitelist when necessary
+if (config.whitelistEnabled) {
+    setInterval(loadWhitelistFromFile, 5000);
+}
 
 // HTTP server for fake session/auth server.
 // code is messy and rushed.

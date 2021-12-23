@@ -4,7 +4,7 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 
 **This project is not in a complete state, there will be issues. Do not use in production.**
 
-- Compatible with Minecraft 1.16 up to 1.17.1 (only 1.17.1 has been tested, snapshot support is not guaranteed)
+- Compatible with Minecraft 1.16 up to 1.18.1 (only 1.17.1 has been tested, snapshot support is not guaranteed)
 	- Servers running 1.8-1.15.2 should also work, albeit with issues. (1.12.2 has been tested)
 	- Later versions should be compatible when support is added in node-minecraft-protocol.
 - All server software *should* be supported, including (but not limited to) Vanilla and [PaperMC](https://papermc.io/).
@@ -43,6 +43,9 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 - **targetOnline** - Whether the game server has online-mode enabled in server.properties. e.g. `true`
 - **webServicePort** - The port used for the web services of the proxy (fake session server for Minecraft 1.16+). e.g. `24464`
 - **maxPlayers** - The maximum players allowed in the game server at once. e.g. `20`
+- **domainWhitelistEnabled** - Whether the domain whitelist should be enabled, kicking players unless they connect through the correct domain name. e.g. `false`
+- **domainWhitelist** - An array of strings with domains that should be accepted for connection, if domainWhitelistEnabled is active. e.g. `["minecraft.mydomain.url"]`
+- **domainWhitelistShowMotd** - Whether a player trying to connect with an invalid domain should see the server's true MOTD. e.g. `true`
 - **connectionThrottleMs** - The number of milliseconds to enforce between connection attempts per IP address. e.g. `4000`
 - **connectionsPerIP** - The number of simultaneous connections to allow per IP address. e.g. `2`
 - **whitelistEnabled** - Whether to enable the user whitelist at whitelist.json. e.g. `false`
