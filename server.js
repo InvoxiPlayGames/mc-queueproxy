@@ -182,7 +182,7 @@ server.on('login', function(client) {
     
     // if server isn't "full", allow player to join instantly
     // todo: check if server is an "admin" to allow joining regardless
-    if (playersInMainServer < config.maxPlayers) {
+    if (playersInMainServer < config.maxPlayers && false == true) {
         connectToMainServer(client, true);
         return;
     }
@@ -212,6 +212,7 @@ server.on('login', function(client) {
         dimension: (client.protocolVersion >= 735) ? loginPacket.dimension : 0,
         levelType: (client.protocolVersion >= 735) ? null : "",
         worldName: 'minecraft:overworld',
+        worldType: 'minecraft:overworld',
         difficulty: 0,
         hashedSeed: [0, 0],
         maxPlayers: server.maxPlayers,
@@ -225,7 +226,7 @@ server.on('login', function(client) {
     client.write('position', { x: 0.5, y: ypos, z: 0.5, yaw: 0, pitch: 0, flags: 0x00 });
     // send our fake chunk data
     
-    var chunk = new (prismarine_chunk(client.protocolVersion))();
+    var chunk = new (prismarine_chunk(server.version))();
     client.write('map_chunk', {
         x: 0,
         z: 0,
@@ -238,7 +239,14 @@ server.on('login', function(client) {
         },
         bitMap: chunk.getMask(),
         chunkData: chunk.dump(),
-        blockEntities: []
+        // yolo attempt at getting 1.19.4 to connect
+        blockEntities: [],
+        skyLight: [],
+        skyLightMask: [],
+        blockLight: [],
+        blockLightMask: [],
+        emptySkyLightMask: [],
+        emptyBlockLightMark: []
     });
     // send our server brand string
     client.registerChannel((client.protocolVersion >= 386) ? 'minecraft:brand' : 'MC|Brand', ['string', []]);
@@ -249,7 +257,17 @@ server.on('login', function(client) {
     if (client.profile) clientprops = client.profile.properties.map(property => ({ name: property.name, value: property.value, isSigned: true, signature: property.signature }));
     client.write("player_info", {
         action: 0,
-        data: [{UUID: client.uuid, name: client.username, properties: clientprops, gamemode: 3, ping: client.latency}]
+        data: [{
+            UUID: client.uuid,
+            name: client.username,
+            properties: clientprops,
+            gamemode: 3,
+            // seems to be changed in later versions?
+            ping: client.latency,
+            uuid: client.uuid,
+            displayName: client.username,
+            latency: client.latency
+        }]
     });
     
     // keep player in the same world position
@@ -324,6 +342,7 @@ function connectToMainServer(client, isFirstJoin) {
             /*if (meta.name != "entity_head_rotation" && meta.name != "entity_status" &&
                 meta.name != "entity_move_look" && meta.name != "entity_velocity" &&
                 meta.name != "entity_teleport" && meta.name != "rel_entity_move" && meta.name != "map_chunk") console.log("server->client:", meta, data);*/
+            if (meta.name == "player_info") console.log(data);
             client.write(meta.name, data);
         });
         client.on("packet", (data, meta) => {
@@ -358,7 +377,7 @@ setInterval(() => {
         clientToJoin.write('chat', { message: JSON.stringify(queueUpdate), position: 0, sender: '0' });
         setTimeout(()=>{ connectToMainServer(clientToJoin, false); }, 1000);
     }
-}, 2000);
+}, 8000);
 
 // whitelist update interval
 // todo: only update whitelist when necessary
