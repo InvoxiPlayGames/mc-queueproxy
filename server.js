@@ -1,6 +1,8 @@
 // imports
 var config = require("./config.json");
 var mc = require('minecraft-protocol');
+var prismarine_chunk = require('prismarine-chunk');
+var minecraft_data = require('minecraft-data');
 var http = require('http');
 var url = require('url');
 var fs = require('fs');
@@ -196,10 +198,11 @@ server.on('login', function(client) {
     queue.push(client.id);
     console.log(client.logPrefix, "Connected to queue at position", queue.indexOf(client.id) + 1);
     
-    var loginPacket = require('minecraft-data')(client.protocolVersion).loginPacket;
+    var loginPacket = minecraft_data(client.protocolVersion).loginPacket;
     // write login packet
     client.write('login', {
         entityId: client.id,
+        levelType: "default",
         isHardcore: false,
         gameMode: 3,
         previousGameMode: 1,
@@ -222,7 +225,7 @@ server.on('login', function(client) {
     client.write('position', { x: 0.5, y: ypos, z: 0.5, yaw: 0, pitch: 0, flags: 0x00 });
     // send our fake chunk data
     
-    var chunk = new (require('prismarine-chunk')(client.protocolVersion))();
+    var chunk = new (prismarine_chunk(client.protocolVersion))();
     client.write('map_chunk', {
         x: 0,
         z: 0,
@@ -307,10 +310,26 @@ function connectToMainServer(client, isFirstJoin) {
                     if (data.data[i].UUID == client.fakeUUID) data.data[i].UUID = client.uuid;
                 }
             }
+            if (meta.name == "server_data") {
+                // hack to get a proper custom MOTD to display in the server list after connecting
+                // use preferred known motd -> use known motd -> use regular motd
+                if (config.preferredKnownMotd >= 0)
+                    data.motd = JSON.stringify(config.knownMotds[config.preferredKnownMotd]);
+                else if (config.knownMotds.length >= 1)
+                    data.motd = JSON.stringify(config.knownMotds[ Math.floor(Math.random() * config.knownMotds.length) ]);
+                else
+                    data.motd = JSON.stringify(config.motds[ Math.floor(Math.random() * config.motds.length) ]);
+            }
+            // uncomment to log packets
+            /*if (meta.name != "entity_head_rotation" && meta.name != "entity_status" &&
+                meta.name != "entity_move_look" && meta.name != "entity_velocity" &&
+                meta.name != "entity_teleport" && meta.name != "rel_entity_move" && meta.name != "map_chunk") console.log("server->client:", meta, data);*/
             client.write(meta.name, data);
         });
         client.on("packet", (data, meta) => {
             if (meta.name == "keep_alive") return; // silence the client's keepalive, the fake client handles this for us - todo: make the real client handle keepalives
+            // uncomment to log packets
+            //if (meta.name != "position") console.log("client->server:", meta, data);
             client.mainClient.write(meta.name, data);
         });
     });

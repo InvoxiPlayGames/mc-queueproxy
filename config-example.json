@@ -29,6 +29,7 @@
           {"text": "\nPowered by mc-queueproxy.", "color": "yellow", "bold": true} ]
     ],
     "knownMotds": [],
+    "preferredKnownMotd": -1,
     "showPlayerCount": false,
     "showPlayers": false,
     "knownShowPlayerCount": true,

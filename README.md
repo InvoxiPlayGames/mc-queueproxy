@@ -7,6 +7,7 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 - Compatible with Minecraft 1.16 up to 1.18.1 (only 1.17.1 has been tested, snapshot support is not guaranteed)
 	- Servers running 1.8-1.15.2 should also work, albeit with issues. (1.12.2 has been tested)
 	- Later versions should be compatible when support is added in node-minecraft-protocol.
+    - Queue functionality is not currently working on 1.19.4 as of 6/6/2023
 - All server software *should* be supported, including (but not limited to) Vanilla and [PaperMC](https://papermc.io/).
     - Some modded servers may run into issues where users will be allowed to join despite not having the correct mods, or may not be able to join at all.
 
@@ -53,6 +54,7 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 - **queueWorldTime** - The time of day to set the queue world to, to slightly adjust the colour the user sees. e.g. `13000`
 - **motds** - An array of text objects / arrays of text objects to use for the message of the day. See config-example.json for examples.
 - **knownMotds** - An array of text objects / arrays of text objects to use for the message of the day for players the server has seen before. If empty (`[]`), the same motds will be used for all users.
+- **preferredKnownMotd** - Index (starting from 0) of a known MOTD to be preferred to be sent during gameplay.
 - **legacyMotdMessage** - A string for a message of the day to be shown to clients running versions below 1.7. e.g. `"A Minecraft Proxy Server"`
 - **showPlayerCount** - Enables showing the player count of the server in the message of the day request. e.g. `false`
 - **showPlayers** - Enables showing the players currently connected to the server in the server list MOTD. This is a potential privacy risk. e.g. `false`
@@ -74,8 +76,9 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 
 - Check for issues with accuracy, performance and reliability.
 - User/IP whitelisting/banning. (user whitelisting is done)
+- 1.19 safety feature support. (not showing players in MOTD list, stripping chat signatures, etc)
 - Admin features (chat commands to whitelist/unwhitelist, view queue stats, kick players from queue etc).
+- OAuth login gate support. (Mastodon, Discord, Patreon, etc)
 - Plugin support on the proxy server itself, to allow for external customisations.
 - Support for detecting mods on host/client servers to kick incompatible players.
 - Paper plugin (for game server) to sync configuration (user whitelist/admins) between proxy and base server.
-- Paper plugin (for game server) to enable changing auth hosts (for online-mode workaround).
