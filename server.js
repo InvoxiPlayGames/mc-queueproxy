@@ -91,6 +91,7 @@ server.on('connection', function(client) {
         if (packet.nextState == 2 && config.enforceServerVersion && server.mcversion.version !== client.protocolVersion) {
             console.log(client.logPrefix, "Tried to connect with an old Minecraft version.");
             client.end(config.unsupportedVersionMessage);
+            client.shouldBeKicked = true;
             return;
         }
     });
@@ -206,7 +207,7 @@ server.on('login', function(client) {
     queue.push(client.id);
     console.log(client.logPrefix, "Connected to queue at position", queue.indexOf(client.id) + 1);
     
-    var loginPacket = minecraft_data(client.protocolVersion).loginPacket;
+    let loginPacket = minecraft_data(client.protocolVersion)?.loginPacket;
     // write login packet
     client.write('login', {
         entityId: client.id,
@@ -253,7 +254,7 @@ server.on('login', function(client) {
         chunkData: chunk.dump(),
         blockEntities: [],
         // added in 1.18+
-        trustEdges: false,
+        trustEdges: true,
         skyLightMask: chunk_light.skyLightMask,
         blockLightMask: chunk_light.blockLightMask,
         emptySkyLightMask: chunk_light.emptySkyLightMask,
