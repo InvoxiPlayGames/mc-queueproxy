@@ -30,8 +30,8 @@ var whitelist = []; // array of whitelisted players
 var admins = []; // array of admin players
 var queue = []; // player queue
 var playersInMainServer = 0; // number of players in the main server
-var accessTokenSecretKey = crypto.randomFillSync(Buffer.alloc(20)).toString("hex"); // random access token
-var clientTokenSecretKey = crypto.randomFillSync(Buffer.alloc(20)).toString("hex"); // random client token
+var accessTokenSecretKey = crypto.randomFillSync(Buffer.alloc(40)).toString("hex"); // random access token
+var clientTokenSecretKey = crypto.randomFillSync(Buffer.alloc(40)).toString("hex"); // random client token
 
 // set up data to send to clients in the queue
 var ypos = 240; // y-pos is set higher if graphics enabled, for glitched snow - todo: add that glitched snow animation
@@ -75,6 +75,7 @@ function serverList(motd, client) {
 // handle connection event
 server.on('connection', function(client) {
     // todo: add IP whitelisting
+    client.logPrefix = `[${client.socket.remoteAddress} | ${client.id} | Connecting]`;
     client.on("set_protocol", (packet) => {
         if (!client.socket.remoteAddress) return; // failure check if a player disconnects right after connection
         // if the IP last connected before connectionThrottleMs elapsed, disconnect the player
@@ -86,6 +87,11 @@ server.on('connection', function(client) {
         } else if (packet.nextState == 2) {
             // keep track of when the IP last connected
             IPtimes[client.socket.remoteAddress] = Date.now();
+        }
+        if (packet.nextState == 2 && config.enforceServerVersion && server.mcversion.version !== client.protocolVersion) {
+            console.log(client.logPrefix, "Tried to connect with an old Minecraft version.");
+            client.end(config.unsupportedVersionMessage);
+            return;
         }
     });
 });
@@ -158,6 +164,7 @@ server.on('login', function(client) {
     }
     
     // disconnect client if version mismatched, if enabled in config
+    // (shouldn't get here)
     if (config.enforceServerVersion && server.mcversion.version !== client.protocolVersion) {
         console.log(client.logPrefix, "Tried to log in with an old Minecraft version.");
         client.end(config.unsupportedVersionMessage);
@@ -183,7 +190,7 @@ server.on('login', function(client) {
     
     // if server isn't "full", allow player to join instantly
     // todo: check if server is an "admin" to allow joining regardless
-    if (playersInMainServer < config.maxPlayers) {
+    if (playersInMainServer < config.maxPlayers && !config.startInQueue) {
         connectToMainServer(client, true);
         return;
     }
@@ -227,7 +234,9 @@ server.on('login', function(client) {
     client.write('position', { x: 0.5, y: ypos, z: 0.5, yaw: 0, pitch: 0, flags: 0x00 });
     // send our fake chunk data
     
-    var chunk = new (prismarine_chunk(server.version))();
+    var chunk = new (prismarine_chunk(client.version))();
+    // chunk light data is only included on 1.18+
+    let chunk_light = client.protocolVersion >= 757 ? chunk.dumpLight() : {};
     client.write('map_chunk', {
         x: 0,
         z: 0,
@@ -242,7 +251,15 @@ server.on('login', function(client) {
         },
         bitMap: chunk.getMask(),
         chunkData: chunk.dump(),
-        blockEntities: []
+        blockEntities: [],
+        // added in 1.18+
+        trustEdges: false,
+        skyLightMask: chunk_light.skyLightMask,
+        blockLightMask: chunk_light.blockLightMask,
+        emptySkyLightMask: chunk_light.emptySkyLightMask,
+        emptyBlockLightMask: chunk_light.emptyBlockLightMask,
+        skyLight: chunk_light.skyLight,
+        blockLight: chunk_light.blockLight
     });
     // send our server brand string
     client.registerChannel((client.protocolVersion >= 386) ? 'minecraft:brand' : 'MC|Brand', ['string', []]);
@@ -251,15 +268,30 @@ server.on('login', function(client) {
     // write tab list data
     var clientprops = [];
     if (client.profile) clientprops = client.profile.properties.map(property => ({ name: property.name, value: property.value, isSigned: true, signature: property.signature }));
-    client.write("player_info", {
-        action: 0,
-        data: [{
-            UUID: client.uuid,
-            name: client.username,
-            properties: clientprops,
-            gamemode: 3
-        }]
-    });
+    if (client.protocolVersion >= 761) {
+        // 1.19.3+ expects a different player_info structure
+        // TODO: make sure this works in offline mode
+        client.write("player_info", {
+            action: 0x1D, //bitflag: player, gamemode, listed
+            data: [{
+                uuid: client.uuid,
+                player: client.profile,
+                gamemode: 3,
+                listed: true
+            }]
+        });
+    } else {
+        // 1.8-1.19.2 stay the same for the most part
+        client.write("player_info", {
+            action: 0,
+            data: [{
+                UUID: client.uuid,
+                name: client.username,
+                properties: clientprops,
+                gamemode: 3
+            }]
+        });
+    }
     
     // keep player in the same world position
     client.on('position', (packet) => {
@@ -320,8 +352,9 @@ function connectToMainServer(client, isFirstJoin) {
             client.write("respawn", login);
         }
         client.mainClient.on("packet", (data, meta) => {
-            if (meta.name == "player_info" && config.onlineMode && !config.targetOnline) {
-                // hack to enable skins using offline mode origin servers
+            // hack to enable skins using offline mode origin servers
+            // TODO: support 1.19.3+ servers when the origin server in offline mode... or don't? no reason to be online-offline on 1.16+
+            if (meta.name == "player_info" && config.onlineMode && !config.targetOnline && client.protocolVersion < 761) {
                 for (var i = 0; i < data.data.length; i++) {
                     if (data.action == 0) {
                         // keep track of this client's fake UUID to replace in later packets
@@ -344,15 +377,10 @@ function connectToMainServer(client, isFirstJoin) {
                     data.motd = JSON.stringify(config.motds[ Math.floor(Math.random() * config.motds.length) ]);
             }
             // uncomment to log packets
-            /*if (meta.name != "entity_head_rotation" && meta.name != "entity_status" &&
-                meta.name != "entity_move_look" && meta.name != "entity_velocity" &&
-                meta.name != "entity_teleport" && meta.name != "rel_entity_move" && meta.name != "map_chunk") console.log("server->client:", meta, data);*/
             client.write(meta.name, data);
         });
         client.on("packet", (data, meta) => {
             if (meta.name == "keep_alive") return; // silence the client's keepalive, the fake client handles this for us - todo: make the real client handle keepalives
-            // uncomment to log packets
-            //if (meta.name != "position") console.log("client->server:", meta, data);
             client.mainClient.write(meta.name, data);
         });
     });

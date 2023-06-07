@@ -4,11 +4,10 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 
 **This project is not in a complete state, there will be issues. Do not use in production.**
 
-- Compatible with Minecraft 1.16 up to 1.18.1 (only 1.17.1 has been tested, snapshot support is not guaranteed)
-	- Servers running 1.8-1.15.2 should also work, albeit with issues. (1.12.2 has been tested)
-	- Later versions should be compatible when support is added in node-minecraft-protocol.
-    - Queue functionality is not currently working on 1.19.4 as of 6/6/2023
-- All server software *should* be supported, including (but not limited to) Vanilla and [PaperMC](https://papermc.io/).
+- Compatible with Minecraft 1.16 up to 1.17.1 (snapshot support is not guaranteed)
+	- Servers running 1.8-1.15.2 should also work, the base server must be in offline mode. (1.12.2 has been tested)
+    - Queue functionality and certain proxy functionality is not currently working on 1.18+.
+- Most server software *should* be supported, including (but not limited to) Vanilla and [PaperMC](https://papermc.io/).
     - Some modded servers may run into issues where users will be allowed to join despite not having the correct mods, or may not be able to join at all.
 
 ## Setting up
@@ -23,7 +22,7 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
     - If using whitelist mode, copy whitelist.json from your Minecraft server to the directory of mc-queueproxy.
 4. Configure your Minecraft server.
     - For servers running 1.16 and later, add the following launch arguments to your server start command: `-Dminecraft.api.account.host="https://api.mojang.com" -Dminecraft.api.session.host="http://yourProxyIP:webServicePort" -Dminecraft.api.auth.host="http://yourProxyIP:webServicePort" -Dminecraft.api.services.host="https://api.minecraftservices.com"`, where "yourProxyIP" is the IP of your proxy server accessible via your main game server, and "webServicePort" is the value defined in config.json.
-	- For servers running 1.15.2 or earlier, disable `online-mode` in server.properties and set `targetOnline` in config.json to false. This is a poor solution, a better plugin-based solution will be worked on in the future.
+	- For servers running 1.15.2 or earlier, disable `online-mode` in server.properties and set `targetOnline` in config.json to false. This is a poor solution, a better plugin-based solution may be worked on in the future.
 	- If running the proxy server on the same machine as your game server, change `server-port` in server.properties to be something *other* than 25565. (reflect this change in config.json)
 5. Configure your firewall / port forwarding.
     - If your game server is running with online-mode disabled, it is **crucial** that you make your game server inaccessible to all IPs besides your proxy server. This is optional, but recommended, if using 1.16 or later and online-mode is enabled.
@@ -35,7 +34,7 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 ## config.json values
 
 - **serverVersion** - A string declaring the Minecraft version for the server to run as. e.g. `"1.17.1"`
-- **enforceServerVersion** - Whether to kick players for using the wrong version. Recommended to keep this as `true` unless your game server has ProtocolSupport/ViaVersion.
+- **enforceServerVersion** - Whether to kick players for using the wrong version. ~~Recommended to keep this as `true` unless your game server has ProtocolSupport/ViaVersion.~~ Should always be `true`, for now.
 - **serverHost** - The IP address to run the proxy server under. Recommended to keep this as `"0.0.0.0"` unless you know what you're doing.
 - **serverPort** - The port to run the proxy server under. e.g. `25565`
 - **onlineMode** - Whether the server checks the user's session against Mojang to prove their username is legitimate. e.g. `true`
@@ -75,9 +74,11 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 ## TODO:
 
 - Check for issues with accuracy, performance and reliability.
-- User/IP whitelisting/banning. (user whitelisting is done)
+- User banning.
+- 1.18/1.19 support. (I believe some issues may be upstream)
 - 1.19 safety feature support. (not showing players in MOTD list, stripping chat signatures, etc)
 - Admin features (chat commands to whitelist/unwhitelist, view queue stats, kick players from queue etc).
+- Allow admins (see above) to join the main server directly via IP when running in double-online mode.
 - OAuth login gate support. (Mastodon, Discord, Patreon, etc)
 - Plugin support on the proxy server itself, to allow for external customisations.
 - Support for detecting mods on host/client servers to kick incompatible players.
