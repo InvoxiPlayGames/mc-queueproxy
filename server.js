@@ -7,6 +7,7 @@ var http = require('http');
 var url = require('url');
 var fs = require('fs');
 var crypto = require('crypto');
+var Vec3 = require('vec3');
 
 // our server object
 var server = mc.createServer({
@@ -182,7 +183,7 @@ server.on('login', function(client) {
     
     // if server isn't "full", allow player to join instantly
     // todo: check if server is an "admin" to allow joining regardless
-    if (playersInMainServer < config.maxPlayers && false == true) {
+    if (playersInMainServer < config.maxPlayers) {
         connectToMainServer(client, true);
         return;
     }
@@ -231,22 +232,17 @@ server.on('login', function(client) {
         x: 0,
         z: 0,
         groundUp: true,
-        biomes: chunk.dumpBiomes !== undefined ? chunk.dumpBiomes() : undefined,
+        biomes: chunk.dumpBiomes(),
         heightmaps: {
             type: 'compound',
             name: '',
-            value: {} // Client will accept fake heightmap
+            value: {
+                MOTION_BLOCKING: { type: 'longArray', value: new Array(36).fill([0, 0]) }
+            } // Client will accept fake heightmap
         },
         bitMap: chunk.getMask(),
         chunkData: chunk.dump(),
-        // yolo attempt at getting 1.19.4 to connect
-        blockEntities: [],
-        skyLight: [],
-        skyLightMask: [],
-        blockLight: [],
-        blockLightMask: [],
-        emptySkyLightMask: [],
-        emptyBlockLightMark: []
+        blockEntities: []
     });
     // send our server brand string
     client.registerChannel((client.protocolVersion >= 386) ? 'minecraft:brand' : 'MC|Brand', ['string', []]);
@@ -261,12 +257,7 @@ server.on('login', function(client) {
             UUID: client.uuid,
             name: client.username,
             properties: clientprops,
-            gamemode: 3,
-            // seems to be changed in later versions?
-            ping: client.latency,
-            uuid: client.uuid,
-            displayName: client.username,
-            latency: client.latency
+            gamemode: 3
         }]
     });
     
@@ -302,10 +293,24 @@ function connectToMainServer(client, isFirstJoin) {
         username: client.username,
         profilesFolder: false,
         // if we're in online mode and on 1.16 or higher, log into our fake session server.
-        password: (config.targetOnline) ? accessTokenSecretKey : null,
-        auth: (config.targetOnline) ? "mojang" : null,
-        authServer: (config.targetOnline) ? "http://localhost:"+config.webServicePort : null,
-        sessionServer: (config.targetOnline) ? "http://localhost:"+config.webServicePort : null
+        sessionServer: (config.targetOnline) ? "http://localhost:"+config.webServicePort : null,
+        auth: (config.targetOnline) ? (newclient, options) => {
+            options.accessToken = accessTokenSecretKey;
+            options.clientToken = clientTokenSecretKey;
+            options.session = {
+                clientToken: clientTokenSecretKey,
+                accessToken: accessTokenSecretKey,
+                selectedProfile: knownPlayers[client.username]
+            };
+            options.haveCredentials = true;
+            newclient.username = client.username;
+            newclient.uuid = client.uuid;
+            newclient.session = options.session;
+            newclient.emit("session", options.session)
+            options.connect(newclient);
+            yggAuthed[knownPlayers[client.username].id] = client.username;
+            return true;
+        } : "offline",
     });
     client.mainClient.on("login", (login) => {
         console.log(client.logPrefix, "Connected to main server!");
@@ -342,7 +347,6 @@ function connectToMainServer(client, isFirstJoin) {
             /*if (meta.name != "entity_head_rotation" && meta.name != "entity_status" &&
                 meta.name != "entity_move_look" && meta.name != "entity_velocity" &&
                 meta.name != "entity_teleport" && meta.name != "rel_entity_move" && meta.name != "map_chunk") console.log("server->client:", meta, data);*/
-            if (meta.name == "player_info") console.log(data);
             client.write(meta.name, data);
         });
         client.on("packet", (data, meta) => {
