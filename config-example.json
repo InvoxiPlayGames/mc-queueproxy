@@ -37,6 +37,7 @@
     "queueInPlayerCount": true,
     "legacyMotdMessage": "A Minecraft Proxy Server",
     "startInQueue": false,
+    "queueUpdateInterval": 5000,
     
     "positionInQueueMessage": "Position in queue: ",
     "joiningGameMessage": "Connecting to server...",

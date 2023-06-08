@@ -4,9 +4,10 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 
 **This project is not in a complete state, there will be issues. Do not use in production.**
 
-- Compatible with Minecraft 1.16 up to 1.17.1 (snapshot support is not guaranteed)
-	- Servers running 1.8-1.15.2 should also work, the base server must be in offline mode. (1.12.2 has been tested)
-    - Queue functionality and certain proxy functionality is not currently working on 1.18+.
+- Compatible with Minecraft 1.8 up to 1.17.1 (snapshot support is not guaranteed)
+	- Servers running 1.8-1.15.2 must have the origin server running in offline mode. See step 4 of configuration. (1.12.2 has been tested)
+    - 1.18-1.18.1 have a functional queue, but have not been tested any further.
+    - 1.18.2+ does not have a functioning queue, and proxy support may be limited. (1.19.4 tested, occasionally disconnects during gameplay)
 - Most server software *should* be supported, including (but not limited to) Vanilla and [PaperMC](https://papermc.io/).
     - Some modded servers may run into issues where users will be allowed to join despite not having the correct mods, or may not be able to join at all.
 
@@ -53,7 +54,7 @@ A Minecraft Java Edition reverse proxy written with [node-minecraft-protocol](ht
 - **queueWorldTime** - The time of day to set the queue world to, to slightly adjust the colour the user sees. e.g. `13000`
 - **motds** - An array of text objects / arrays of text objects to use for the message of the day. See config-example.json for examples.
 - **knownMotds** - An array of text objects / arrays of text objects to use for the message of the day for players the server has seen before. If empty (`[]`), the same motds will be used for all users.
-- **preferredKnownMotd** - Index (starting from 0) of a known MOTD to be preferred to be sent during gameplay.
+- **preferredKnownMotd** - Index (starting from 0) of a known MOTD to be preferred to be sent during gameplay. Use `-1` for random.
 - **legacyMotdMessage** - A string for a message of the day to be shown to clients running versions below 1.7. e.g. `"A Minecraft Proxy Server"`
 - **showPlayerCount** - Enables showing the player count of the server in the message of the day request. e.g. `false`
 - **showPlayers** - Enables showing the players currently connected to the server in the server list MOTD. This is a potential privacy risk. e.g. `false`

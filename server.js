@@ -167,7 +167,7 @@ server.on('login', function(client) {
     // disconnect client if version mismatched, if enabled in config
     // (shouldn't get here)
     if (config.enforceServerVersion && server.mcversion.version !== client.protocolVersion) {
-        console.log(client.logPrefix, "Tried to log in with an old Minecraft version.");
+        console.log(client.logPrefix, `Tried to log in with an old Minecraft version. (${client.version})`);
         client.end(config.unsupportedVersionMessage);
         return;
     }
@@ -175,7 +175,7 @@ server.on('login', function(client) {
     knownPlayers[client.username] = client.profile; // add user to known users cache
     knownIPs[client.socket.remoteAddress] = client.username; // add user to known IPs cache
     
-    console.log(client.logPrefix, "Logged in.")
+    console.log(client.logPrefix, `Logged in from a ${client.version} (${client.protocolVersion}) client.`)
     
     // handle client disconnections
     client.on('end', (reason) => {
@@ -211,7 +211,6 @@ server.on('login', function(client) {
     // write login packet
     client.write('login', {
         entityId: client.id,
-        levelType: "default",
         isHardcore: false,
         gameMode: 3,
         previousGameMode: 1,
@@ -226,6 +225,7 @@ server.on('login', function(client) {
         hashedSeed: [0, 0],
         maxPlayers: server.maxPlayers,
         viewDistance: 1,
+        simulationDistance: 10,
         reducedDebugInfo: false,
         enableRespawnScreen: true,
         isDebug: false,
@@ -238,30 +238,55 @@ server.on('login', function(client) {
     var chunk = new (prismarine_chunk(client.version))();
     // chunk light data is only included on 1.18+
     let chunk_light = client.protocolVersion >= 757 ? chunk.dumpLight() : {};
-    client.write('map_chunk', {
-        x: 0,
-        z: 0,
-        groundUp: true,
-        biomes: chunk.dumpBiomes(),
-        heightmaps: {
-            type: 'compound',
-            name: '',
-            value: {
-                MOTION_BLOCKING: { type: 'longArray', value: new Array(36).fill([0, 0]) }
-            } // Client will accept fake heightmap
+    // TODO: sending map_chunk but breaks newer 1.18+ clients
+    //       issue could be upstream, but may just be lack of documentation on new values
+    // technically not required, but nice to have for the sake of it...
+    if (client.protocolVersion < 757) {
+        client.write('map_chunk', {
+            x: 0,
+            z: 0,
+            groundUp: true,
+            biomes: chunk.dumpBiomes(),
+            heightmaps: {
+                type: 'compound',
+                name: '',
+                value: {
+                    MOTION_BLOCKING: { type: 'longArray', value: new Array(36).fill([0, 0]) }
+                } // Client will accept fake heightmap
+            },
+            bitMap: chunk.getMask(),
+            chunkData: chunk.dump(),
+            blockEntities: [],
+            // added in 1.18+
+            trustEdges: true,
+            skyLightMask: chunk_light.skyLightMask,
+            blockLightMask: chunk_light.blockLightMask,
+            emptySkyLightMask: chunk_light.emptySkyLightMask,
+            emptyBlockLightMask: chunk_light.emptyBlockLightMask,
+            skyLight: chunk_light.skyLight,
+            blockLight: chunk_light.blockLight
+        });
+    }
+    // send a default spawn position and player position
+    // required to get 1.18+ to spawn
+    client.write('spawn_position', {
+        location: {
+            x: 0.5,
+            y: 0.5,
+            z: 0.5
         },
-        bitMap: chunk.getMask(),
-        chunkData: chunk.dump(),
-        blockEntities: [],
-        // added in 1.18+
-        trustEdges: true,
-        skyLightMask: chunk_light.skyLightMask,
-        blockLightMask: chunk_light.blockLightMask,
-        emptySkyLightMask: chunk_light.emptySkyLightMask,
-        emptyBlockLightMask: chunk_light.emptyBlockLightMask,
-        skyLight: chunk_light.skyLight,
-        blockLight: chunk_light.blockLight
+        angle: 90.0
     });
+    // send an initial player position packet
+    client.write('position', {
+        x: 0.5,
+        y: ypos,
+        z: 0.5,
+        yaw: 0,
+        pitch: 0,
+        flags: 0x00
+    });
+
     // send our server brand string
     client.registerChannel((client.protocolVersion >= 386) ? 'minecraft:brand' : 'MC|Brand', ['string', []]);
     client.writeChannel((client.protocolVersion >= 386) ? 'minecraft:brand' : 'MC|Brand', 'QueueServer');
@@ -271,7 +296,7 @@ server.on('login', function(client) {
     if (client.profile) clientprops = client.profile.properties.map(property => ({ name: property.name, value: property.value, isSigned: true, signature: property.signature }));
     if (client.protocolVersion >= 761) {
         // 1.19.3+ expects a different player_info structure
-        // TODO: make sure this works in offline mode
+        // TODO: there's some values here i don't know that are expected to be sent
         client.write("player_info", {
             action: 0x1D, //bitflag: player, gamemode, listed
             data: [{
@@ -318,6 +343,7 @@ server.on('login', function(client) {
 
 function connectToMainServer(client, isFirstJoin) {
     client.connectedToServer = true;
+    console.log(client.logPrefix, "Connecting to main server...");
     playersInMainServer++;
     client.mainClient = mc.createClient({
         version: client.protocolVersion,
@@ -410,7 +436,7 @@ setInterval(() => {
         clientToJoin.write('chat', { message: JSON.stringify(queueUpdate), position: 0, sender: '0' });
         setTimeout(()=>{ connectToMainServer(clientToJoin, false); }, 1000);
     }
-}, 8000);
+}, config.queueUpdateInterval);
 
 // whitelist update interval
 // todo: only update whitelist when necessary
